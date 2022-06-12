@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:listadetarefas/repositorio/todo_repositorio.dart';
 import 'package:listadetarefas/widgets/todo_list_item.dart';
 import 'package:listadetarefas/models/todo.dart';
 
@@ -16,8 +17,22 @@ class _TodoListPageState extends State<TodoListPage> {
   Todo? deletedTodo;
   int? deletedTodoPos;
 
+  String? erro;
+
+  @override
+  void initState(){
+    super.initState();
+    
+    todoRepositorio.getTodoList().then((value){
+      setState((){
+        todos=value;
+      });
+    });
+  }
+
 
   final TextEditingController todocontroller = TextEditingController();
+  final TodoRepositorio todoRepositorio = TodoRepositorio();
 
   @override
   Widget build(BuildContext context) {
@@ -38,6 +53,7 @@ class _TodoListPageState extends State<TodoListPage> {
                         border: OutlineInputBorder(),
                         labelText: "Adicione uma Tarefa",
                         hintText: "Ex. Estudar Flutter",
+                        errorText: erro,
                       ),
                     ),
                   ),
@@ -45,15 +61,26 @@ class _TodoListPageState extends State<TodoListPage> {
                   ElevatedButton(
                     onPressed: (){
                       String text = todocontroller.text;
+                        if(text.isEmpty){
+                          setState(() {
+                            erro = "O titulo não pode estar vazio!!";
+                          });
+                          return;
+                        }
+
+
+
                       setState((){
                         Todo newTodo = Todo(
                           title: text,
                           dateTime: DateTime.now(),
                         );
                         todos.add(newTodo);
+                        erro = null;
                       });
 
                       todocontroller.clear();
+                      todoRepositorio.saveTodoList(todos);
 
                     },
                     style: ElevatedButton.styleFrom(
@@ -113,6 +140,8 @@ class _TodoListPageState extends State<TodoListPage> {
     setState((){
       todos.remove(todo);
     });
+    todoRepositorio.saveTodoList(todos);
+
     ScaffoldMessenger.of(context).clearSnackBars();
     ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("A Tarefa ${todo.title} foi removida com sucesso!",
@@ -126,6 +155,7 @@ class _TodoListPageState extends State<TodoListPage> {
               todos.insert(deletedTodoPos!, deletedTodo!);
 
             });
+            todoRepositorio.saveTodoList(todos);
           },
         ),),
     );
@@ -136,6 +166,7 @@ class _TodoListPageState extends State<TodoListPage> {
       setState((){
         todos.clear();
       });
+      todoRepositorio.saveTodoList(todos);
     }
   }
 
